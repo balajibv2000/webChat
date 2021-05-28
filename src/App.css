@@ -1,0 +1,43 @@
+.App {
+  text-align: center;
+}
+
+.app__logoContainer{
+  display: inline-flex;
+  margin-left: 50px;
+}
+
+.app__logo {
+  height: 30%;
+  width: 30%;
+}
+
+.app__container {
+  display: flex;
+  justify-content: center;
+}
+
+.app__form {
+  border-radius: 50px;
+  padding: 10px;
+  position: fixed;
+  bottom: 0;
+  z-index: 1;
+  background-color: rgb(175, 236, 238);
+  width: 90%;
+  margin: 20px
+}
+
+.app__formControl {
+  display: flex !important;
+  flex-direction: row !important;
+}
+
+.app__input {
+  margin: 20px;
+  flex: 1;
+}
+
+.app__iconButton {
+  flex: 0;
+}
