@@ -1,65 +1,110 @@
-import { Button, FormControl, Input, InputLabel } from '@material-ui/core';
 import { useState, useEffect } from 'react'
-import Message from './components/Message'
 import './App.css';
 import db from './firebase'
-import firebase from 'firebase'
-import FlipMove from 'react-flip-move'
-import SendIcon from '@material-ui/icons/Send';
-import { IconButton } from '@material-ui/core';
+import Login from './components/Login'
+import Home from './components/Home'
+
 
 function App() {
 
-  const [messages, setMessage] = useState([])
-  const [input, setInput] = useState('')
-  const [userName, setUserName] = useState('')
+  const [user, setUser] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [emailError, setEmailError] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [hasAccount, setHasAccount] = useState(false)
 
-  useEffect(() => {
-    db.collection('messages').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
-      setMessage(snapshot.docs.map(doc => ({ id: doc.id, message: doc.data() })))
-    })
-  }, [input])
-
-  useEffect(() => {
-    setUserName(prompt("Please enter your name"));
-  }, [])
-
-  const addMessage = (event) => {
-    event.preventDefault(); // will stop refresh
-
-    db.collection('messages').add({
-      message: input,
-      username: userName,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    })
-
-    setMessage([...messages, { username: userName, message: input }]);
-    setInput('');
+  const clearInputs = () => {
+    setEmail('')
+    setPassword('')
   }
+
+  const clearErrors = () => {
+    setEmailError('')
+    setPasswordError('')
+  }
+
+  const handleLogin = () => {
+    console.log('i am here')
+    clearErrors()
+    db.auth().signInWithEmailAndPassword(email, password)
+      .catch(err => {
+        switch (err.code) {
+          case "auth/invalid-email":
+          case "auth/user-disabled":
+          case "auth/user-not-found":
+            setEmailError(err.message)
+            break;
+          case "auth/wrong-password":
+            setPasswordError(err.message)
+            break;
+        }
+      })
+  }
+
+  const handleSignup = () => {
+    clearErrors()
+    db.auth().createUserWithEmailAndPassword(email, password)
+      .catch(err => {
+        switch (err.code) {
+          case "auth/email-already-in-use":
+          case "auth/ivalid-email":
+            setEmailError(err.message)
+            break;
+          case "auth/weak-password":
+            setPasswordError(err.message)
+            break;
+        }
+      })
+  }
+
+  const handleLogout = () => {
+    console.log('i am in logout')
+    db.auth().signOut();
+  }
+
+  const authListener = () => {
+    db.auth().onAuthStateChanged((user) => {
+      if (user) {
+        clearInputs()
+        setUser(user)
+      } else {
+        console.log('i am in else')
+        setUser('')
+      }
+    })
+    console.log('i am in authListener')
+  }
+
+  useEffect(() => {
+    authListener()
+    console.log(user.email)
+  }, [])
 
   return (
     <div className="App">
-      <div className='app__logoContainer'>
-        <img className='app__logo' src='webChat.png' />
-        <h1>webChat</h1>
-      </div>
-      <h2>Welcome {userName}</h2>
-      <div className='app__container'>
-        <form className='app__form'>
-          <FormControl className='app__formControl'>
+      {user ? (
+        <Home
+          handleLogout={handleLogout}
+          userName={user.email}
+        />
+      ) : (
+        <Login
+          email={email}
+          password={password}
+          setEmail={setEmail}
+          setPassword={setPassword}
+          handleLogin={handleLogin}
+          handleSignup={handleSignup}
+          hasAccount={hasAccount}
+          setHasAccount={setHasAccount}
+          emailError={emailError}
+          passwordError={passwordError}
+        />
+      )
+      }
 
-            <Input className='app__input' placeholder='Type here ...' value={input} onChange={event => setInput(event.target.value)} />
-            <IconButton className='app__iconButton' disabled={!input} variant="contained" color="primary" type='submit' onClick={addMessage}>
-              <SendIcon />
-            </IconButton>
-          </FormControl>
-        </form>
-      </div>
-      <FlipMove>
-        {messages.map(({ id, message }) => (
-          <Message key={id} username={userName} text={message} />
-        ))}
-      </FlipMove>
+
     </div>
   );
 }
